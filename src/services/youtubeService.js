@@ -3,7 +3,6 @@ const fs = require('fs');
 const ffmpeg = require('fluent-ffmpeg');
 const path = require('path');
 require('dotenv').config();
-const AWS = require('aws-sdk');
 
 let youtube;
 const activeStreams = new Map();
@@ -114,20 +113,13 @@ const createStream = async () => {
 
 const startYouTubeStream = async (videoId) => {
   try {
-    // Get video URL from S3
-    const videoUrl = await s3.getSignedUrlPromise('getObject', {
-      Bucket: process.env.AWS_BUCKET_NAME,
-      Key: videoId,
-      Expires: 3600 // URL expires in 1 hour
-    });
-
     const youtube = await initializeYouTube();
     
     // Create broadcast and stream
     const broadcast = await createBroadcast(`Live Stream ${videoId}`);
     const stream = await createStream();
 
-    // Check video path
+    // Get video path
     const videoPath = path.join(__dirname, '../../uploads', videoId);
     console.log('Video path:', videoPath);
 
@@ -136,7 +128,7 @@ const startYouTubeStream = async (videoId) => {
     console.log('Complete RTMP URL:', rtmpUrl);
 
     // Start streaming using ffmpeg
-    const ffmpegProcess = ffmpeg(videoUrl)
+    const ffmpegProcess = ffmpeg(videoPath)
       .inputOptions([
         '-re',
         '-stream_loop -1'

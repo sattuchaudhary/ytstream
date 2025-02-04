@@ -1,8 +1,6 @@
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const AWS = require('aws-sdk');
-const multerS3 = require('multer-s3');
 
 // क्लीनअप फंक्शन
 const cleanupOldFiles = (directory) => {
@@ -68,24 +66,20 @@ try {
   console.error('Error checking disk space:', error);
 }
 
-// AWS S3 configuration
-const s3 = new AWS.S3({
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  region: process.env.AWS_REGION
+// Configure storage
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const filename = Date.now() + '-' + Math.round(Math.random() * 1E9) + path.extname(file.originalname);
+    cb(null, filename);
+  }
 });
 
-// Configure multer for S3
+// Configure multer
 const upload = multer({
-  storage: multerS3({
-    s3: s3,
-    bucket: process.env.AWS_BUCKET_NAME,
-    acl: 'private',
-    key: function (req, file, cb) {
-      const filename = Date.now() + '-' + Math.round(Math.random() * 1E9) + path.extname(file.originalname);
-      cb(null, filename);
-    }
-  }),
+  storage: storage,
   fileFilter: (req, file, cb) => {
     console.log('Processing file:', file.originalname);
     
@@ -130,7 +124,7 @@ const uploadMiddleware = (req, res, next) => {
       });
     }
 
-    console.log('File uploaded to S3:', req.file.location);
+    console.log('File uploaded successfully:', req.file.path);
     next();
   });
 };

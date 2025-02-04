@@ -11,16 +11,15 @@ const uploadVideo = async (req, res) => {
     }
 
     console.log('File details:', {
-      url: req.file.location,
-      key: req.file.key,
+      filename: req.file.filename,
+      path: req.file.path,
       size: req.file.size,
       mimetype: req.file.mimetype
     });
 
     res.json({ 
       success: true, 
-      videoId: req.file.key,
-      url: req.file.location,
+      videoId: req.file.filename,
       message: 'Video uploaded successfully'
     });
 
