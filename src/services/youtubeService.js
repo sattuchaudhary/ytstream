@@ -422,13 +422,18 @@ const startYouTubeStream = async (videoId) => {
     const rtmpUrl = `${stream.cdn.ingestionInfo.ingestionAddress}/${stream.cdn.ingestionInfo.streamName}`;
     console.log('Complete RTMP URL:', rtmpUrl);
 
+<<<<<<< Updated upstream
     // Start streaming using ffmpeg with better quality settings
+=======
+    // Start streaming using ffmpeg with optimized settings
+>>>>>>> Stashed changes
     const ffmpegProcess = ffmpeg(videoPath)
       .inputOptions([
         '-re',  // Read input at native frame rate
         '-stream_loop -1',  // Loop the video infinitely
         '-analyzeduration 2147483647',
         '-probesize 2147483647',
+<<<<<<< Updated upstream
         '-fflags +genpts'
       ])
       .outputOptions([
@@ -446,12 +451,87 @@ const startYouTubeStream = async (videoId) => {
         '-b:a 384k',  // Audio bitrate (increased)
         '-ar 48000',  // Audio sample rate
         '-ac 2',  // Audio channels
+=======
+        '-fflags +genpts',
+        '-vsync 1'  // Video sync method
+      ])
+      .outputOptions([
+        '-c:v libx264',  // Video codec
+        '-preset faster',  // Encoding speed preset
+        '-tune zerolatency',  // Tune for streaming
+        '-profile:v high',  // H.264 profile
+        '-level:v 4.1',  // H.264 level
+        '-b:v 8000k',  // Video bitrate
+        '-maxrate 8000k',  // Maximum bitrate
+        '-bufsize 16000k',  // Buffer size (2x bitrate)
+        '-pix_fmt yuv420p',
+        '-g 48',  // GOP size (2x framerate)
+        '-keyint_min 24',  // Minimum GOP size
+        '-sc_threshold 0',  // Scene change threshold
+        '-r 24',  // Output framerate
+        '-c:a aac',  // Audio codec
+        '-b:a 384k',  // Audio bitrate
+        '-ar 48000',  // Audio sample rate
+        '-ac 2',  // Audio channels
+        '-shortest',  // End encoding when shortest input ends
+        '-max_muxing_queue_size 9999',  // Increase muxing queue
+>>>>>>> Stashed changes
         '-threads 4',
         '-f flv'  // Output format
       ])
       .output(rtmpUrl)
+<<<<<<< Updated upstream
       .on('start', (commandLine) => {
         console.log('FFmpeg started:', commandLine);
+=======
+      .on('start', async (commandLine) => {
+        try {
+          console.log('FFmpeg command:', commandLine);
+          console.log('FFmpeg started streaming');
+          
+          // First bind the stream
+          await youtube.liveBroadcasts.bind({
+            part: 'id,contentDetails',
+            id: broadcast.id,
+            streamId: stream.id,
+          });
+          console.log('Stream bound to broadcast');
+
+          // Wait for stream to be ready
+          await new Promise(resolve => setTimeout(resolve, 10000));
+
+          // Check stream status before transitioning
+          const streamStatus = await youtube.liveStreams.list({
+            part: 'status',
+            id: stream.id
+          });
+
+          if (streamStatus.data.items[0].status.streamStatus === 'active') {
+            // Then transition to testing
+            await youtube.liveBroadcasts.transition({
+              part: 'id,status',
+              id: broadcast.id,
+              broadcastStatus: 'testing'
+            });
+            console.log('Stream in testing state');
+
+            // Wait before going live
+            await new Promise(resolve => setTimeout(resolve, 5000));
+
+            // Finally transition to live
+            await youtube.liveBroadcasts.transition({
+              part: 'id,status',
+              id: broadcast.id,
+              broadcastStatus: 'live'
+            });
+            console.log('Stream is now live!');
+          } else {
+            console.error('Stream is not active yet');
+          }
+        } catch (error) {
+          console.error('Error in stream transitions:', error);
+        }
+>>>>>>> Stashed changes
       })
       .on('stderr', (stderrLine) => {
         console.log('FFmpeg:', stderrLine);
