@@ -17,7 +17,8 @@ app.use(express.urlencoded({ extended: true, limit: '500mb' }));
 app.use(cors({
   origin: [
     'http://localhost:3000',
-    'https://ytsattu.netlify.app'  // Add Netlify domain
+    'https://ytsattu.netlify.app',
+    'http://16.171.4.213:5000'  // Add your EC2 URL
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
@@ -39,6 +40,15 @@ app.use(session({
 // Static files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// Basic route for testing
+app.get('/', (req, res) => {
+  res.json({ message: 'YouTube Streamer API is running!' });
+});
+
+// Routes
+app.use('/api', apiRoutes);
+app.use('/auth', authRoutes);
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Global error:', err);
@@ -47,10 +57,6 @@ app.use((err, req, res, next) => {
     details: err.message
   });
 });
-
-// Routes
-app.use('/api', apiRoutes);
-app.use('/auth', authRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
